@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>CineMatch — Movie Recommender</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #0a0a0f; --surface: #13131a; --card: #1a1a24;
+      --border: rgba(255,255,255,0.07); --gold: #e8c97e;
+      --gold-dim: rgba(232,201,126,0.15); --text: #f0ede8;
+      --muted: #7a7880; --accent: #c4566a;
+    }
+    body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif; min-height: 100vh; overflow-x: hidden; }
+    header { text-align: center; padding: 60px 20px 40px; }
+    header::after { content: ''; display: block; width: 60px; height: 1px; background: var(--gold); margin: 20px auto 0; }
+    .logo-tag { font-size: 11px; letter-spacing: 4px; text-transform: uppercase; color: var(--gold); font-weight: 500; margin-bottom: 12px; }
+    h1 {
+      font-family: 'Playfair Display', serif; font-size: clamp(2.5rem, 6vw, 4.5rem); font-weight: 700; line-height: 1.1;
+      background: linear-gradient(135deg, #f0ede8 30%, var(--gold)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    }
+    h1 em { font-style: italic; color: var(--accent); -webkit-text-fill-color: var(--accent); }
+    .subtitle { color: var(--muted); font-size: 0.95rem; margin-top: 10px; font-weight: 300; }
+    .filters { max-width: 900px; margin: 0 auto; padding: 0 20px 50px; }
+    .filter-card { background: var(--surface); border: 1px solid var(--border); border-radius: 20px; padding: 36px; }
+    .filter-section { margin-bottom: 28px; }
+    .filter-label { font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: var(--gold); font-weight: 500; margin-bottom: 14px; display: block; }
+    .pill-group { display: flex; flex-wrap: wrap; gap: 10px; }
+    .pill {
+      padding: 9px 20px; border-radius: 50px; border: 1px solid var(--border);
+      background: var(--card); color: var(--muted); font-family: 'DM Sans', sans-serif;
+      font-size: 0.88rem; cursor: pointer; transition: all 0.2s; user-select: none;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .pill:hover { border-color: rgba(232,201,126,0.4); color: var(--text); }
+    .pill.active { background: var(--gold-dim); border-color: var(--gold); color: var(--gold); font-weight: 500; }
+    .industry-group { display: flex; gap: 10px; }
+    .industry-btn {
+      flex: 1; padding: 12px; border-radius: 12px; border: 1px solid var(--border);
+      background: var(--card); color: var(--muted); font-family: 'DM Sans', sans-serif;
+      font-size: 0.9rem; cursor: pointer; transition: all 0.2s; text-align: center;
+    }
+    .industry-btn:hover { border-color: rgba(232,201,126,0.4); color: var(--text); }
+    .industry-btn.active { background: var(--gold-dim); border-color: var(--gold); color: var(--gold); font-weight: 500; }
+    .divider { border: none; border-top: 1px solid var(--border); margin: 28px 0; }
+    .btn-find {
+      width: 100%; padding: 16px; background: linear-gradient(135deg, var(--gold), #c8a84b);
+      color: #0a0a0f; border: none; border-radius: 12px; font-family: 'DM Sans', sans-serif;
+      font-size: 0.95rem; font-weight: 500; letter-spacing: 1px; cursor: pointer; transition: all 0.25s;
+    }
+    .btn-find:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(232,201,126,0.3); }
+    .results-section { max-width: 1100px; margin: 0 auto; padding: 0 20px 80px; }
+    .results-header { font-family: 'Playfair Display', serif; font-size: 1.4rem; font-style: italic; color: var(--muted); margin-bottom: 28px; text-align: center; display: none; }
+    .results-header span { color: var(--gold); font-style: normal; }
+    .movies-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 20px; }
+    .movie-card {
+      background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 24px;
+      transition: all 0.3s; animation: fadeUp 0.4s ease both; position: relative; overflow: hidden;
+    }
+    .movie-card::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+      background: linear-gradient(90deg, var(--gold), var(--accent)); opacity: 0; transition: opacity 0.3s;
+    }
+    .movie-card:hover { transform: translateY(-4px); border-color: rgba(232,201,126,0.2); }
+    .movie-card:hover::before { opacity: 1; }
+    @keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+    .movie-industry { font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--accent); font-weight: 500; margin-bottom: 8px; }
+    .movie-title { font-family: 'Playfair Display', serif; font-size: 1.05rem; font-weight: 700; line-height: 1.3; margin-bottom: 6px; }
+    .movie-year { color: var(--muted); font-size: 0.8rem; margin-bottom: 12px; }
+    .movie-desc { color: #9d9aa5; font-size: 0.82rem; line-height: 1.6; margin-bottom: 16px; font-weight: 300; }
+    .movie-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
+    .tag { background: var(--gold-dim); color: var(--gold); font-size: 10px; padding: 3px 10px; border-radius: 20px; }
+    .movie-rating { display: flex; align-items: center; gap: 6px; font-size: 0.85rem; font-weight: 500; }
+    .star { color: var(--gold); }
+    .no-results { text-align: center; padding: 60px 20px; color: var(--muted); display: none; }
+    .no-results .emoji { font-size: 3rem; margin-bottom: 16px; }
+    @media (max-width: 640px) { .industry-group { flex-direction: column; } }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo-tag">✦ Movie Recommender</div>
+  <h1>Cine<em>Match</em></h1>
+  <p class="subtitle">Apne mood aur genre ke hisaab se perfect movie dhundho</p>
+</header>
+
+<div class="filters">
+  <div class="filter-card">
+
+    <div class="filter-section">
+      <span class="filter-label">🎬 Genre choose karo</span>
+      <div class="pill-group" id="genreGroup">
+        <button class="pill" onclick="selectPill(this,'genre')" data-value="Action">💥 Action</button>
+        <button class="pill" onclick="selectPill(this,'genre')" data-value="Adventure">🗺️ Adventure</button>
+        <button class="pill" onclick="selectPill(this,'genre')" data-value="Animation">🎨 Animation</button>
+        <button class="pill" onclick="selectPill(this,'genre')" data-value="Comedy">😂 Comedy</button>
+        <button class="pill" onclick="selectPill(this,'genre')" data-value="Crime">🔍 Crime</button>
+        <button class="pill" onclick="selectPill(this,'genre')" data-value="Drama">🎭 Drama</button>
+        <button class="pill" onclick="selectPill(this,'genre')" data-value="Fantasy">🧙 Fantasy</button>
+        <button class="pill" onclick="selectPill(this,'genre')" data-value="Horror">👻 Horror</button>
+        <button class="pill" onclick="selectPill(this,'genre')" data-value="Music">🎵 Music</button>
+        <button class="pill" onclick="selectPill(this,'genre')" data-value="Romantic">❤️ Romantic</button>
+        <button class="pill" onclick="selectPill(this,'genre')" data-value="Sci-Fi">🚀 Sci-Fi</button>
+        <button class="pill" onclick="selectPill(this,'genre')" data-value="Sports">🏆 Sports</button>
+        <button class="pill" onclick="selectPill(this,'genre')" data-value="Thriller">😰 Thriller</button>
+      </div>
+    </div>
+
+    <hr class="divider">
+
+    <div class="filter-section">
+      <span class="filter-label">😊 Mood choose karo</span>
+      <div class="pill-group" id="moodGroup">
+        <button class="pill" onclick="selectPill(this,'mood')" data-value="Angry">😠 Angry</button>
+        <button class="pill" onclick="selectPill(this,'mood')" data-value="Depressed">😞 Depressed</button>
+        <button class="pill" onclick="selectPill(this,'mood')" data-value="Emotional">🥺 Emotional</button>
+        <button class="pill" onclick="selectPill(this,'mood')" data-value="Excited">🤩 Excited</button>
+        <button class="pill" onclick="selectPill(this,'mood')" data-value="Happy">😄 Happy</button>
+        <button class="pill" onclick="selectPill(this,'mood')" data-value="Motivated">💪 Motivated</button>
+        <button class="pill" onclick="selectPill(this,'mood')" data-value="Romantic">🥰 Romantic</button>
+        <button class="pill" onclick="selectPill(this,'mood')" data-value="Sad">😢 Sad</button>
+        <button class="pill" onclick="selectPill(this,'mood')" data-value="Scared">😱 Scared</button>
+        <button class="pill" onclick="selectPill(this,'mood')" data-value="Upset">😤 Upset</button>
+      </div>
+    </div>
+
+    <hr class="divider">
+
+    <div class="filter-section" style="margin-bottom:0;">
+      <span class="filter-label">🌍 Industry</span>
+      <div class="industry-group">
+        <button class="industry-btn active" onclick="selectIndustry(this)" data-value="Both">🎭 Dono</button>
+        <button class="industry-btn" onclick="selectIndustry(this)" data-value="Bollywood">🎬 Bollywood</button>
+        <button class="industry-btn" onclick="selectIndustry(this)" data-value="Hollywood">🎥 Hollywood</button>
+      </div>
+    </div>
+
+    <hr class="divider">
+    <button class="btn-find" onclick="getRecommendations()">✦ Recommend karo</button>
+  </div>
+</div>
+
+<div class="results-section">
+  <div class="results-header" id="resultsHeader"><span id="countText"></span> movies mile tumhare liye</div>
+  <div class="no-results" id="noResults">
+    <div class="emoji">🎭</div>
+    <p>Koi movie nahi mili. Dusra genre ya mood try karo!</p>
+  </div>
+  <div class="movies-grid" id="moviesGrid"></div>
+</div>
+
+<script>
+const MOVIES = [
+  {title:"Dilwale Dulhania Le Jayenge",year:1995,industry:"Bollywood",genre:["Romantic","Drama"],mood:["Happy","Romantic"],rating:8.1,description:"A young man follows the love of his life to her home in India."},
+  {title:"3 Idiots",year:2009,industry:"Bollywood",genre:["Comedy","Drama"],mood:["Happy","Motivated"],rating:8.4,description:"Two friends search for their third buddy who inspired them."},
+  {title:"Dangal",year:2016,industry:"Bollywood",genre:["Drama","Sports"],mood:["Motivated","Emotional"],rating:8.3,description:"A father trains his daughters to become world-class wrestlers."},
+  {title:"Kabir Singh",year:2019,industry:"Bollywood",genre:["Romantic","Drama"],mood:["Sad","Angry","Depressed"],rating:7.1,description:"A talented surgeon's life spirals after a painful breakup."},
+  {title:"Andhadhun",year:2018,industry:"Bollywood",genre:["Thriller","Crime"],mood:["Excited","Upset"],rating:8.2,description:"A blind pianist witnesses a murder and gets entangled in a web."},
+  {title:"Gully Boy",year:2019,industry:"Bollywood",genre:["Drama","Music"],mood:["Motivated","Happy"],rating:7.9,description:"A street rapper from the slums of Mumbai rises to fame."},
+  {title:"Queen",year:2014,industry:"Bollywood",genre:["Drama","Comedy"],mood:["Happy","Motivated"],rating:8.1,description:"A solo honeymoon changes a jilted bride's life forever."},
+  {title:"Tumbbad",year:2018,industry:"Bollywood",genre:["Horror","Fantasy"],mood:["Scared","Excited"],rating:8.2,description:"A man's obsession with ancient treasure consumes generations."},
+  {title:"Zindagi Na Milegi Dobara",year:2011,industry:"Bollywood",genre:["Adventure","Comedy"],mood:["Happy","Motivated"],rating:8.1,description:"Three friends go on a road trip across Spain before one gets married."},
+  {title:"Gangs of Wasseypur",year:2012,industry:"Bollywood",genre:["Crime","Action"],mood:["Angry","Excited"],rating:8.2,description:"A saga of revenge and power in the coal mines of Dhanbad."},
+  {title:"Dil Chahta Hai",year:2001,industry:"Bollywood",genre:["Comedy","Romantic"],mood:["Happy","Romantic"],rating:8.1,description:"Three best friends navigate love, life, and friendship."},
+  {title:"Taare Zameen Par",year:2007,industry:"Bollywood",genre:["Drama"],mood:["Emotional","Sad","Motivated"],rating:8.4,description:"A dyslexic child finds hope through an understanding art teacher."},
+  {title:"Stree",year:2018,industry:"Bollywood",genre:["Horror","Comedy"],mood:["Happy","Scared"],rating:7.8,description:"A small town is haunted by a ghost that takes men away."},
+  {title:"PK",year:2014,industry:"Bollywood",genre:["Comedy","Drama"],mood:["Happy","Emotional"],rating:8.1,description:"An alien stranded on Earth questions India's religious practices."},
+  {title:"Devdas",year:2002,industry:"Bollywood",genre:["Romantic","Drama"],mood:["Sad","Depressed","Emotional"],rating:7.2,description:"A man drowns himself in alcohol after losing his childhood love."},
+  {title:"Drishyam",year:2015,industry:"Bollywood",genre:["Thriller","Crime"],mood:["Excited","Upset"],rating:8.2,description:"A man goes to great lengths to protect his family from the law."},
+  {title:"Bajrangi Bhaijaan",year:2015,industry:"Bollywood",genre:["Drama","Adventure"],mood:["Emotional","Happy"],rating:8.0,description:"A man helps a mute Pakistani girl return to her homeland."},
+  {title:"Kuch Kuch Hota Hai",year:1998,industry:"Bollywood",genre:["Romantic","Drama"],mood:["Romantic","Sad","Happy"],rating:7.5,description:"A college love triangle that gets resolved years later."},
+  {title:"The Dark Knight",year:2008,industry:"Hollywood",genre:["Action","Thriller"],mood:["Excited","Angry"],rating:9.0,description:"Batman battles the Joker who plunges Gotham into chaos."},
+  {title:"Interstellar",year:2014,industry:"Hollywood",genre:["Sci-Fi","Drama"],mood:["Emotional","Excited"],rating:8.6,description:"Astronauts travel through a wormhole to save humanity."},
+  {title:"The Shawshank Redemption",year:1994,industry:"Hollywood",genre:["Drama"],mood:["Motivated","Emotional","Sad"],rating:9.3,description:"A banker finds hope and friendship in prison over decades."},
+  {title:"Inception",year:2010,industry:"Hollywood",genre:["Sci-Fi","Thriller"],mood:["Excited","Upset"],rating:8.8,description:"A thief who steals secrets through dream-sharing tech."},
+  {title:"The Pursuit of Happyness",year:2006,industry:"Hollywood",genre:["Drama"],mood:["Motivated","Sad","Emotional"],rating:8.0,description:"A struggling salesman raises his son while chasing success."},
+  {title:"Avengers: Endgame",year:2019,industry:"Hollywood",genre:["Action","Sci-Fi"],mood:["Excited","Emotional"],rating:8.4,description:"The Avengers assemble one last time to reverse Thanos's actions."},
+  {title:"La La Land",year:2016,industry:"Hollywood",genre:["Romantic","Music"],mood:["Romantic","Sad","Happy"],rating:8.0,description:"An aspiring actress and jazz musician fall in love in LA."},
+  {title:"Parasite",year:2019,industry:"Hollywood",genre:["Thriller","Crime"],mood:["Angry","Upset"],rating:8.5,description:"A poor family schemes to become employed by a wealthy household."},
+  {title:"Home Alone",year:1990,industry:"Hollywood",genre:["Comedy","Adventure"],mood:["Happy","Excited"],rating:7.7,description:"A boy accidentally left home alone defends it from burglars."},
+  {title:"The Notebook",year:2004,industry:"Hollywood",genre:["Romantic","Drama"],mood:["Romantic","Sad","Emotional"],rating:7.8,description:"An old man reads a love story to a woman with dementia."},
+  {title:"Get Out",year:2017,industry:"Hollywood",genre:["Horror","Thriller"],mood:["Scared","Angry"],rating:7.7,description:"A Black man uncovers a disturbing secret at his girlfriend's family home."},
+  {title:"Forrest Gump",year:1994,industry:"Hollywood",genre:["Drama","Comedy"],mood:["Happy","Emotional","Sad"],rating:8.8,description:"A kind-hearted man witnesses and influences major historical events."},
+  {title:"The Lion King",year:1994,industry:"Hollywood",genre:["Drama","Adventure"],mood:["Emotional","Sad","Motivated"],rating:8.5,description:"A young lion prince flees after his father's murder."},
+  {title:"Spider-Man: No Way Home",year:2021,industry:"Hollywood",genre:["Action","Sci-Fi"],mood:["Excited","Emotional"],rating:8.2,description:"Spider-Man faces villains from alternate universes."},
+  {title:"Joker",year:2019,industry:"Hollywood",genre:["Drama","Thriller"],mood:["Depressed","Angry","Upset"],rating:8.4,description:"A failed comedian descends into madness and becomes a symbol of rebellion."},
+  {title:"A Quiet Place",year:2018,industry:"Hollywood",genre:["Horror","Thriller"],mood:["Scared","Excited"],rating:7.5,description:"A family struggles to survive in a post-apocalyptic world of silence."},
+  {title:"Titanic",year:1997,industry:"Hollywood",genre:["Romantic","Drama"],mood:["Romantic","Sad","Emotional"],rating:7.9,description:"A love story aboard the ill-fated RMS Titanic."},
+  {title:"Inside Out",year:2015,industry:"Hollywood",genre:["Animation","Comedy"],mood:["Sad","Happy","Emotional"],rating:8.1,description:"A girl's emotions come to life inside her mind as she faces change."},
+  {title:"John Wick",year:2014,industry:"Hollywood",genre:["Action","Thriller"],mood:["Angry","Excited"],rating:7.4,description:"A retired hitman seeks vengeance after his dog is killed."},
+];
+
+let selectedGenre = '', selectedMood = '', selectedIndustry = 'Both';
+
+function selectPill(btn, type) {
+  const groupId = type === 'genre' ? 'genreGroup' : 'moodGroup';
+  document.querySelectorAll('#' + groupId + ' .pill').forEach(p => p.classList.remove('active'));
+  btn.classList.add('active');
+  if (type === 'genre') selectedGenre = btn.dataset.value;
+  else selectedMood = btn.dataset.value;
+}
+
+function selectIndustry(btn) {
+  document.querySelectorAll('.industry-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  selectedIndustry = btn.dataset.value;
+}
+
+function getRecommendations() {
+  if (!selectedGenre && !selectedMood) {
+    alert('Please genre ya mood zaroor choose karo!');
+    return;
+  }
+
+  const results = [];
+  MOVIES.forEach(m => {
+    if (selectedIndustry !== 'Both' && m.industry !== selectedIndustry) return;
+    let score = 0;
+    if (selectedGenre && m.genre.includes(selectedGenre)) score += 2;
+    if (selectedMood && m.mood.includes(selectedMood)) score += 2;
+    if (score > 0) results.push({...m, score});
+  });
+
+  results.sort((a, b) => b.score - a.score || b.rating - a.rating);
+  const top = results.slice(0, 8);
+
+  document.getElementById('noResults').style.display = 'none';
+  document.getElementById('resultsHeader').style.display = 'none';
+  document.getElementById('moviesGrid').innerHTML = '';
+
+  if (top.length === 0) {
+    document.getElementById('noResults').style.display = 'block';
+    return;
+  }
+
+  document.getElementById('resultsHeader').style.display = 'block';
+  document.getElementById('countText').textContent = top.length;
+
+  const grid = document.getElementById('moviesGrid');
+  top.forEach((m, i) => {
+    const card = document.createElement('div');
+    card.className = 'movie-card';
+    card.style.animationDelay = i * 0.07 + 's';
+    const tags = [...m.genre, ...m.mood].slice(0, 4).map(t => '<span class="tag">' + t + '</span>').join('');
+    card.innerHTML =
+      '<div class="movie-industry">' + m.industry + '</div>' +
+      '<div class="movie-title">' + m.title + '</div>' +
+      '<div class="movie-year">' + m.year + '</div>' +
+      '<div class="movie-desc">' + m.description + '</div>' +
+      '<div class="movie-tags">' + tags + '</div>' +
+      '<div class="movie-rating"><span class="star">★</span> ' + m.rating + '/10</div>';
+    grid.appendChild(card);
+  });
+}
+</script>
+</body>
+</html>
